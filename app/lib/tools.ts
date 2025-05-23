@@ -1,34 +1,54 @@
 import { z } from 'zod';
 import { tool } from 'ai';
 
-// Service Identification Tool
-export const identifyService = tool({
-  name: 'identifyService',
-  description: 'Identifies the requested service from user input',
+// List Available Services Tool
+export const listServices = tool({
+  name: 'listServices',
+  description: 'Lists all available services with their variants',
   parameters: z.object({
-    userRequest: z.string().describe('The user\'s request in natural language')
+    category: z.string().optional().describe('Optional category to filter services'),
+    location: z.object({
+      city: z.string().optional().describe('City name for location-specific services'),
+      area: z.string().optional().describe('Specific area within the city')
+    }).optional().describe('Location filters for services')
   }),
-  execute: async ({ userRequest }) => {
-    // Mock implementation - in a real system, this would query a service database
+  execute: async ({ category, location }) => {
+  // Mock implementation - in a real system, this would query a service catalog
     const services = [
-      { id: 'plumbing', name: 'Plumbing', description: 'Plumbing services including repairs, installations, and maintenance' },
-      { id: 'cleaning', name: 'Cleaning', description: 'Home and office cleaning services' },
-      { id: 'electrical', name: 'Electrical', description: 'Electrical repairs and installations' },
-      { id: 'carpentry', name: 'Carpentry', description: 'Furniture repairs, installations, and custom builds' },
-      { id: 'painting', name: 'Painting', description: 'Interior and exterior painting services' }
+      {
+        id: 'plumbing',
+        name: 'Basic Plumbing',
+        description: 'Simple repairs and maintenance',
+        price: 2000,
+        category: 'plumbing'
+      },
+      {
+        id: 'electrical',
+        name: 'Electrical',
+        description: 'Electrical repairs and installations',
+        price: 5000,
+        category: 'electrical'
+      },
+      {
+        id: 'cleaning',
+        name: 'Cleaning',
+        description: 'Regular home cleaning',
+        price: 1500,
+        category: 'cleaning'
+      },
+      {
+        id: 'carpentry',
+        name: 'Carpentry',
+        description: 'Furniture repair and custom building',
+        price: 3500,
+        category: 'cleaning'
+      }
     ];
-    
-    // Simple keyword matching for demo purposes
-    const userRequestLower = userRequest.toLowerCase();
-    const matchedService = services.find(service => 
-      userRequestLower.includes(service.id) || 
-      userRequestLower.includes(service.name.toLowerCase())
-    );
-    
-    return matchedService || { 
-      id: 'unknown', 
-      name: 'Unknown Service', 
-      description: 'Could not identify a specific service from your request' 
+
+    return {
+      services: category
+        ? services.filter(s => s.category === category)
+        : services
     };
   },
 });
@@ -258,14 +278,139 @@ export const getHackathonInfo = tool({
   },
 });
 
-// Export all tools
+
+// Available Slots Tool
+export const getAvailableSlots = tool({
+  name: 'getAvailableSlots',
+  description: 'Gets available time slots for service booking',
+  parameters: z.object({
+    serviceId: z.string().describe('The ID of the selected service'),
+    providerId: z.string().optional().describe('The ID of the selected provider'),
+    date: z.string().describe('The date to check availability for'),
+    location: z.object({
+      city: z.string().describe('City name'),
+      area: z.string().optional().describe('Specific area within the city')
+    }).describe('Location for the service')
+  }),
+  execute: async ({ serviceId, providerId, date }) => {
+    // Mock implementation - in a real system, this would query a scheduling system
+    const mockSlots = [
+      '09:00 AM',
+      '10:00 AM',
+      '11:00 AM',
+      '02:00 PM',
+      '03:00 PM',
+      '04:00 PM'
+    ];
+
+    return {
+      date,
+      slots: mockSlots,
+      provider: providerId
+    };
+  },
+});
+
+// Request Review Tool
+export const requestReview = tool({
+  name: 'requestReview',
+  description: 'Requests a review for a completed service',
+  parameters: z.object({
+    orderId: z.string().describe('The ID of the completed order'),
+    providerId: z.string().describe('The ID of the service provider'),
+    serviceId: z.string().describe('The ID of the service provided')
+  }),
+  execute: async ({ orderId, providerId, serviceId }) => {
+    // Mock implementation - in a real system, this would check if the order is completed
+    return {
+      canReview: true,
+      orderDetails: {
+        orderId,
+        providerId,
+        serviceId,
+        completionDate: new Date().toISOString()
+      }
+    };
+  },
+});
+
+// Collect User Details Tool
+export const collectUserDetails = tool({
+  name: 'collectUserDetails',
+  description: 'Collects and validates user details for service booking',
+  parameters: z.object({
+    orderId: z.string().optional().describe('The ID of the order if updating existing details'),
+    details: z.object({
+      name: z.string().describe('Customer name'),
+      phone: z.string().describe('Customer phone number'),
+      address: z.string().describe('Customer address'),
+      area: z.string().describe('Area or neighborhood'),
+      city: z.string().describe('City name')
+    }).describe('Customer details')
+  }),
+  execute: async ({ orderId, details }) => {
+    // Mock implementation - in a real system, this would validate and store customer details
+    return {
+      status: 'success',
+      customerId: `CUST-${Math.floor(Math.random() * 10000)}`,
+      details
+    };
+  },
+});
+
+// Order Cancellation Tool
+export const cancelOrder = tool({
+  name: 'cancelOrder',
+  description: 'Cancels an existing order',
+  parameters: z.object({
+    orderId: z.string().describe('The ID of the order to cancel'),
+    reason: z.string().describe('Reason for cancellation'),
+    refundRequired: z.boolean().describe('Whether a refund is required')
+  }),
+  execute: async ({ orderId, reason, refundRequired }) => {
+    // Mock implementation - in a real system, this would handle order cancellation and refunds
+    return {
+      status: 'cancelled',
+      cancellationId: `CANC-${Math.floor(Math.random() * 10000)}`,
+      refundStatus: refundRequired ? 'initiated' : 'not_required'
+    };
+  },
+});
+
+// Order Rescheduling Tool
+export const rescheduleOrder = tool({
+  name: 'rescheduleOrder',
+  description: 'Reschedules an existing order',
+  parameters: z.object({
+    orderId: z.string().describe('The ID of the order to reschedule'),
+    newDateTime: z.string().describe('New date and time for the service'),
+    reason: z.string().optional().describe('Reason for rescheduling')
+  }),
+  execute: async ({ orderId, newDateTime, reason }) => {
+    // Mock implementation - in a real system, this would check availability and update scheduling
+    return {
+      status: 'rescheduled',
+      newSchedule: {
+        dateTime: newDateTime,
+        confirmed: true
+      }
+    };
+  },
+});
+
+// Update the bingwaTools export
 export const bingwaTools = {
-  identifyService,
   resolveVariant,
   selectProvider,
   createOrder,
+  rescheduleOrder,
+  cancelOrder,
+  collectUserDetails,
   processPayment,
   trackOrderStatus,
   handlePostService,
-  getHackathonInfo
+  getHackathonInfo,
+  listServices,        // Add new tool
+  getAvailableSlots,   // Add new tool
+  requestReview        // Add new tool
 };
