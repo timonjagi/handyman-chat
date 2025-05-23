@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { AutoResizeTextarea } from '@/components/autoresize-textarea'
 import { HackathonInfo } from '@/components/HackathonInfo'
+import { ServiceProviderCard } from '@/components/ServiceProviderCard'
+import { OrderSummaryCard } from '@/components/OrderSummaryCard'
+import { PaymentStatusCard } from '@/components/PaymentStatusCard'
 
 export function ChatForm({
   className,
@@ -32,28 +35,163 @@ export function ChatForm({
   const header = (
     <header className="m-auto flex max-w-96 flex-col gap-5 text-center">
       <h1 className="text-2xl font-semibold leading-none tracking-tight">
-        AI Chatbot with Generative UI
+        Bingwa Ordering System
       </h1>
       <p className="text-muted-foreground text-sm">
-        This is an AI chatbot app template built with{' '}
-        <span className="text-foreground">Next.js</span>, the{' '}
-        <span className="text-foreground">Vercel AI SDK</span>, and{' '}
-        <span className="text-foreground">Vercel KV</span>.
+        Your personal assistant for ordering services in Kenya
       </p>
       <p className="text-muted-foreground text-sm">
-        Connect an API Key from your provider and send a message to get started. Ask how many people attended the world's shortest hackathon to test it out!
+        Simply describe what service you need, when you need it, and where. For example: "I need a plumber tomorrow in Nairobi" or "Looking for a cleaner this weekend"
       </p>
     </header>
   )
 
+  const renderDynamicComponent = (message: any) => {
+    // Check for service provider selection
+    if (message.role === 'assistant' && message.toolInvocations?.some(
+      (t: any) => t.toolName === 'selectProvider' && t.state === 'result'
+    )) {
+      const toolResult = message.toolInvocations.find(
+        (t: any) => t.toolName === 'selectProvider'
+      ).result;
+      
+      if (toolResult?.providers?.length > 0) {
+        return (
+          <div className="my-4 w-full space-y-4">
+            <h3 className="text-lg font-medium">Available Service Providers</h3>
+            <div className="grid grid-cols-1 gap-4">
+              {toolResult.providers.map((provider: any) => (
+                <ServiceProviderCard 
+                  key={provider.id}
+                  provider={provider}
+                  onSelect={(providerId) => {
+                    // In a real app, we would store this selection in state
+                    console.log(`Selected provider: ${providerId}`);
+                    append({
+                      content: `I'd like to select ${provider.name} as my service provider.`,
+                      role: 'user'
+                    });
+                  }}
+                  selected={provider.id === toolResult.autoAssigned?.id}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      }
+    }
+    
+    // Check for order creation
+    if (message.role === 'assistant' && message.toolInvocations?.some(
+      (t: any) => t.toolName === 'createOrder' && t.state === 'result'
+    )) {
+      const toolResult = message.toolInvocations.find(
+        (t: any) => t.toolName === 'createOrder'
+      ).result;
+      
+      // Mock order data for demo purposes
+      const orderData = {
+        orderId: toolResult.orderId,
+        service: {
+          name: 'Plumbing',
+          variant: {
+            name: 'Basic Plumbing',
+            price: toolResult.amount
+          }
+        },
+        provider: {
+          name: 'John Kamau'
+        },
+        location: {
+          area: 'Westlands',
+          city: 'Nairobi'
+        },
+        scheduledTime: 'Tomorrow at 10:00 AM',
+        customer: {
+          name: 'Customer Name',
+          phone: '+254712345678'
+        },
+        amount: toolResult.amount,
+        currency: toolResult.currency
+      };
+      
+      return (
+        <div className="my-4 w-full">
+          <OrderSummaryCard 
+            order={orderData}
+            onConfirm={() => {
+              append({
+                content: 'I confirm this order and would like to proceed with payment.',
+                role: 'user'
+              });
+            }}
+            onEdit={() => {
+              append({
+                content: 'I need to make changes to this order.',
+                role: 'user'
+              });
+            }}
+          />
+        </div>
+      );
+    }
+    
+    // Check for payment processing
+    if (message.role === 'assistant' && message.toolInvocations?.some(
+      (t: any) => t.toolName === 'processPayment' && t.state === 'result'
+    )) {
+      const toolResult = message.toolInvocations.find(
+        (t: any) => t.toolName === 'processPayment'
+      ).result;
+      
+      // Mock payment data for demo purposes
+      const paymentData = {
+        paymentId: toolResult.paymentId,
+        status: toolResult.status as 'pending' | 'processing' | 'completed' | 'failed',
+        method: 'mpesa' as 'mpesa' | 'card' | 'cash',
+        amount: 2000,
+        currency: 'KES',
+        transactionDetails: toolResult.transactionDetails
+      };
+      
+      return (
+        <div className="my-4 w-full">
+          <PaymentStatusCard 
+            payment={paymentData}
+            onRetry={() => {
+              append({
+                content: 'I want to retry the payment.',
+                role: 'user'
+              });
+            }}
+            onDone={() => {
+              append({
+                content: 'Great! What happens next with my order?',
+                role: 'user'
+              });
+            }}
+          />
+        </div>
+      );
+    }
+    
+    // Check for hackathon info (legacy support)
+    if (message.role === 'assistant' && message.toolInvocations?.some(
+      (t: any) => t.toolName === 'getHackathonInfo' && t.state === 'result'
+    )) {
+      return (
+        <div className="my-4 w-full">
+          <HackathonInfo attendees={1000} />
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
   const messageList = (
     <div className="my-4 flex h-fit min-h-full flex-col gap-4">
       {messages.map((message, index) => {
-        const showHackathonInfo = message.role === 'assistant' && 
-          message.toolInvocations?.some(t => 
-            t.toolName === 'getHackathonInfo' && t.state === 'result'
-          );
-
         return (
           <div key={index} className={cn("flex flex-col", message.role === 'user' ? "items-end" : "items-start")}>
             {message.content && 
@@ -64,11 +202,7 @@ export function ChatForm({
                 {message.content}
               </div>
             }
-            {showHackathonInfo && (
-              <div className="my-4 w-full">
-                <HackathonInfo attendees={1000} />
-              </div>
-            )}
+            {message.role === 'assistant' && renderDynamicComponent(message)}
           </div>
         );
       })}

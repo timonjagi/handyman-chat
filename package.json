@@ -1,7 +1,8 @@
 {
-  "name": "my-v0-project",
+  "name": "bingwa-ordering-system",
   "version": "0.1.0",
   "private": true,
+  "description": "A modern service ordering platform with a dynamic chat interface",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
