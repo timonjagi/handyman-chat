@@ -416,8 +416,7 @@ export const rescheduleOrder = tool({
   },
 });
 
-// Update the bingwaTools export
-export const bingwaTools = {
+export const tools = {
   resolveVariant,
   selectProvider,
   createOrder,
@@ -428,7 +427,7 @@ export const bingwaTools = {
   trackOrderStatus,
   handlePostService,
   getHackathonInfo,
-  listServices,        // Add new tool
-  getAvailableSlots,   // Add new tool
-  requestReview        // Add new tool
+  listServices,
+  getAvailableSlots,
+  requestReview
 };

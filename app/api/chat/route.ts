@@ -1,6 +1,6 @@
 import { CoreMessage, streamText } from 'ai'
 import { google } from '@ai-sdk/google'
-import { bingwaTools } from '@/app/lib/tools'
+import { tools } from '@/app/lib/tools'
 
 export async function POST(req: Request) {
   const { messages }: { messages: CoreMessage[] } = await req.json()
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
              
              When a user specifies a relative date like "tomorrow", "today", or "next week", infer the exact date based on the current date (August 31, 2025). For example, "tomorrow" would be September 1, 2025. Always format dates as 'YYYY-MM-DD' when passing them to tools like 'getAvailableSlots' or 'createOrder'.`,
     messages,
-    tools: bingwaTools,
+    tools,
   })
 
   return result.toDataStreamResponse()
