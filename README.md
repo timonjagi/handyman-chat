@@ -1,30 +1,41 @@
-# Generative UI Chatbot
+# Handyman Ordering System
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+A modern service ordering platform with a dynamic chat interface, built on Next.js and the Vercel AI SDK.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/toruslabs/v0-generative-ui-chatbot)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/57z674fH9qn)
+## Features
 
-## Overview
+- Natural language chat interface for service ordering
+- Dynamic UI components that adapt to the conversation context
+- Modular backend tools for service identification, provider selection, order creation, and payment processing
+- Integration with M-Pesa for payments
+- Order lifecycle tracking and management
+- Review and rebooking capabilities
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+## Architecture
 
-## Deployment
+The Handyman Ordering System consists of:
 
-Your project is live at:
+1. **Chat Interface (Frontend)**: A Next.js application with dynamic UI components
+2. **Server (Backend)**: A modular system of tools that power the conversation and workflow logic
+3. **External Integrations**: Connections to payment providers, service provider databases, and order management systems
 
-**[https://vercel.com/toruslabs/v0-generative-ui-chatbot](https://vercel.com/toruslabs/v0-generative-ui-chatbot)**
+## Getting Started
 
-## Build your app
+```bash
+# Install dependencies
+npm install
 
-Continue building your app on:
+# Run the development server
+npm run dev
+```
 
-**[https://v0.dev/chat/projects/57z674fH9qn](https://v0.dev/chat/projects/57z674fH9qn)**
+Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
-## How It Works
+## Tech Stack
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Vercel AI SDK
+- OpenAI GPT-4
+- Shadcn UI Components
