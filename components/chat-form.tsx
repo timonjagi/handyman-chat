@@ -7,7 +7,6 @@ import { ArrowUpIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { AutoResizeTextarea } from '@/components/autoresize-textarea'
-import { HackathonInfo } from '@/components/HackathonInfo'
 import { ServiceProviderCard } from '@/components/ServiceProviderCard'
 import { OrderSummaryCard } from '@/components/OrderSummaryCard'
 import { PaymentStatusCard } from '@/components/PaymentStatusCard'
@@ -206,27 +205,27 @@ export function ChatForm({
 
       if (!toolResult) return null;
 
-      // Mock order data for demo purposes
       const orderData = {
         orderId: toolResult.orderId,
         service: {
-          name: 'Plumbing',
-          variant: {
-            name: 'Basic Plumbing',
-            price: toolResult.amount
-          }
+          name: toolResult.serviceName || 'Unknown Service',
+          variant: toolResult.serviceVariantName ? {
+            name: toolResult.serviceVariantName,
+            price: toolResult.serviceVariantPrice || toolResult.amount
+          } : undefined
         },
         provider: {
-          name: 'John Kamau'
+          name: toolResult.providerName || 'Unknown Provider'
         },
         location: {
-          area: 'Westlands',
-          city: 'Nairobi'
+          area: toolResult.locationArea || 'Unknown Area',
+          city: toolResult.locationCity || 'Unknown City',
+          details: toolResult.locationDetails
         },
-        scheduledTime: 'Tomorrow at 10:00 AM',
+        scheduledTime: toolResult.scheduledTime || 'Unknown Time',
         customer: {
-          name: 'Customer Name',
-          phone: '+254712345678'
+          name: toolResult.customerName || 'Unknown Customer',
+          phone: toolResult.customerPhone || 'N/A'
         },
         amount: toolResult.amount,
         currency: toolResult.currency

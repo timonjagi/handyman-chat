@@ -177,15 +177,36 @@ export const createOrder = tool({
     }).describe('Customer contact information')
   }),
   execute: async (params) => {
-    // Mock implementation - in a real system, this would call an order creation API
     const orderId = `ORD-${Math.floor(Math.random() * 10000)}`;
+
+    const service = mockServices.find(s => s.id === params.serviceId);
+    const variant = params.variantId ? mockVariantsByService[params.serviceId as keyof typeof mockVariantsByService]?.find(v => v.id === params.variantId) : undefined;
+    const provider = mockProviders.find(p => p.id === params.providerId);
+
+    const amount = variant?.price || (params.variantId?.includes('basic') ? 2000 : 5000); // Use variant price if available, else simplified logic
 
     return {
       orderId,
       status: 'pending',
       paymentRequired: true,
-      amount: params.variantId?.includes('basic') ? 2000 : 5000, // Simplified pricing logic
-      currency: 'KES'
+      amount,
+      currency: 'KES',
+      service: {
+        id: params.serviceId,
+        name: service?.name || 'Unknown Service',
+        variant: variant ? {
+          id: variant.id,
+          name: variant.name,
+          price: variant.price
+        } : undefined
+      },
+      provider: {
+        id: params.providerId,
+        name: provider?.name || 'Unknown Provider'
+      },
+      location: params.location,
+      scheduledTime: params.scheduledTime,
+      customer: params.customerDetails
     };
   },
 });
