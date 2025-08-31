@@ -7,10 +7,11 @@ import { Star } from 'lucide-react'
 import { useState } from 'react'
 
 interface ReviewFormProps {
-  onSubmit: (rating: number, comment: string) => void
+  orderId: string;
+  onSubmit: (rating: number, comment: string) => void;
 }
 
-export function ReviewForm({ onSubmit }: ReviewFormProps) {
+export function ReviewForm({ orderId, onSubmit }: ReviewFormProps) {
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
 

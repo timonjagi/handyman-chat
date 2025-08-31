@@ -6,7 +6,7 @@ import { ReactNode } from 'react'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Bingwa Ordering System',
+  title: 'Handyman Assistant',
   description: 'A modern service ordering platform with a dynamic chat interface',
   generator: 'v0.dev'
 }

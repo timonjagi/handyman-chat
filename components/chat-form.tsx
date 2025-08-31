@@ -144,16 +144,23 @@ export function ChatForm({
       }
     }
 
-    // Check for review submission
+    // Check for review submission after service completion
     if (message.role === 'assistant' && message.toolInvocations?.some(
-      (t: { toolName: string; state: string; }) => t.toolName === 'requestReview' && t.state === 'result'
+      (t: { toolName: string; state: string; action?: string; }) => t.toolName === 'handlePostService' && t.state === 'result' && t.action === 'review'
     )) {
+      const toolResult = message.toolInvocations.find(
+        (t: { toolName: string; }) => t.toolName === 'handlePostService'
+      )?.result;
+
+      const orderId = toolResult?.orderId; // Assuming orderId is part of the result
+
       return (
         <div className="my-4 w-full">
           <ReviewForm
+            orderId={orderId}
             onSubmit={(rating, comment) => {
               append({
-                content: `My rating: ${rating} stars. Comment: ${comment}`,
+                content: `I have submitted a review for order ${orderId} with ${rating} stars and comment: "${comment}".`,
                 role: 'user'
               });
             }}
@@ -341,18 +348,21 @@ export function ChatForm({
       );
     }
 
-    // Check for order rescheduling
+    // Check for order rescheduling interface
     if (message.role === 'assistant' && message.toolInvocations?.some(
-      (t: { toolName: string; state: string; }) => t.toolName === 'rescheduleOrder' && t.state === 'result'
+      (t: { toolName: string; state: string; }) => t.toolName === 'rescheduleOrder' && t.state === 'start'
     )) {
-      const toolResult = message.toolInvocations.find(
+      const toolInvocation = message.toolInvocations.find(
         (t: { toolName: string; }) => t.toolName === 'rescheduleOrder'
-      )?.result;
+      );
+
+      // Assuming orderId is passed in the initial tool invocation parameters
+      const orderId = toolInvocation?.result?.orderId || 'UNKNOWN_ORDER_ID'; // Adjust based on actual tool invocation structure
 
       return (
         <div className="my-4 w-full">
           <ReschedulingInterface
-            orderId={toolResult?.orderId}
+            orderId={orderId}
             availableSlots={[
               '09:00 AM',
               '10:00 AM',
@@ -363,19 +373,36 @@ export function ChatForm({
             ]}
             onReschedule={(newDateTime, reason) => {
               append({
-                content: `I want to reschedule the service to ${newDateTime}${reason ? `. Reason: ${reason}` : ''}.`,
+                content: `I want to reschedule order ${orderId} to ${newDateTime}${reason ? `. Reason: ${reason}` : ''}.`,
                 role: 'user'
               });
             }}
             onCancel={() => {
               append({
-                content: 'I changed my mind, I don\'t want to reschedule.',
+                content: 'I changed my mind, I don\'t want to reschedule order.',
                 role: 'user'
               });
             }}
           />
         </div>
       );
+    }
+    // Check for order rescheduling result
+    if (message.role === 'assistant' && message.toolInvocations?.some(
+      (t: { toolName: string; state: string; }) => t.toolName === 'rescheduleOrder' && t.state === 'result'
+    )) {
+      const toolResult = message.toolInvocations.find(
+        (t: { toolName: string; }) => t.toolName === 'rescheduleOrder'
+      )?.result;
+
+      if (toolResult?.status === 'rescheduled') {
+        return (
+          <div className="my-4 w-full">
+            <p>Your order has been successfully rescheduled!</p>
+            <p>New Date/Time: {toolResult.newSchedule.dateTime}</p>
+          </div>
+        );
+      }
     }
 
     // Check for order status updates

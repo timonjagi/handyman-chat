@@ -7,12 +7,12 @@ export const listServices = tool({
   description: 'Lists all available services with their variants',
   parameters: z.object({
     category: z.string().optional().describe('Optional category to filter services'),
-    location: z.object({
-      city: z.string().optional().describe('City name for location-specific services'),
-      area: z.string().optional().describe('Specific area within the city')
-    }).optional().describe('Location filters for services')
+    // location: z.object({
+    //   city: z.string().optional().describe('City name for location-specific services'),
+    //   area: z.string().optional().describe('Specific area within the city')
+    // }).optional().describe('Location filters for services')
   }),
-  execute: async ({ category, location }) => {
+  execute: async ({ category }) => {
     return {
       services: category
         ? mockServices.filter(s => s.category === category)
