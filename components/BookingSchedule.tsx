@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Calendar } from '@/components/ui/calendar'
 import { useState } from 'react'
+import { Button } from './ui/button'
 
 interface BookingScheduleProps {
   onDateSelect: (date: Date) => void

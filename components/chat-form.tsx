@@ -170,14 +170,14 @@ export function ChatForm({
       const toolResult = message.toolInvocations.find(
         (t: { toolName: string; }) => t.toolName === 'selectProvider'
       )?.result;
-      
+
       if (toolResult?.providers?.length > 0) {
         return (
           <div className="my-4 w-full space-y-4">
             <h3 className="text-lg font-medium">Available Service Providers</h3>
             <div className="grid grid-cols-1 gap-4">
               {toolResult.providers.map((provider: any) => (
-                <ServiceProviderCard 
+                <ServiceProviderCard
                   key={provider.id}
                   provider={provider}
                   onSelect={(providerId) => {
@@ -195,7 +195,7 @@ export function ChatForm({
         );
       }
     }
-    
+
     // Check for order creation
     if (message.role === 'assistant' && message.toolInvocations?.some(
       (t: { toolName: string; state: string; }) => t.toolName === 'createOrder' && t.state === 'result'
@@ -205,7 +205,7 @@ export function ChatForm({
       )?.result;
 
       if (!toolResult) return null;
-      
+
       // Mock order data for demo purposes
       const orderData = {
         orderId: toolResult.orderId,
@@ -231,10 +231,10 @@ export function ChatForm({
         amount: toolResult.amount,
         currency: toolResult.currency
       };
-      
+
       return (
         <div className="my-4 w-full">
-          <OrderSummaryCard 
+          <OrderSummaryCard
             order={orderData}
             onConfirm={() => {
               append({
@@ -252,7 +252,7 @@ export function ChatForm({
         </div>
       );
     }
-    
+
     // Check for payment processing
     if (message.role === 'assistant' && message.toolInvocations?.some(
       (t: { toolName: string; state: string; }) => t.toolName === 'processPayment' && t.state === 'result'
@@ -262,7 +262,7 @@ export function ChatForm({
       )?.result;
 
       if (!toolResult) return null;
-      
+
       // Mock payment data for demo purposes
       const paymentData = {
         paymentId: toolResult.paymentId,
@@ -272,10 +272,10 @@ export function ChatForm({
         currency: 'KES',
         transactionDetails: toolResult.transactionDetails
       };
-      
+
       return (
         <div className="my-4 w-full">
-          <PaymentStatusCard 
+          <PaymentStatusCard
             payment={paymentData}
             onRetry={() => {
               append({
@@ -293,7 +293,7 @@ export function ChatForm({
         </div>
       );
     }
-    
+
     // Check for user details collection
     if (message.role === 'assistant' && message.toolInvocations?.some(
       (t: { toolName: string; state: string; }) => t.toolName === 'collectUserDetails' && t.state === 'result'
@@ -424,7 +424,7 @@ export function ChatForm({
       {messages.map((message, index) => {
         return (
           <div key={index} className={cn("flex flex-col", message.role === 'user' ? "items-end" : "items-start")}>
-            {message.content && 
+            {message.content &&
               <div
                 data-role={message.role}
                 className="max-w-[80%] rounded-2xl px-4 py-2.5 text-base data-[role=assistant]:bg-gray-50 data-[role=user]:bg-blue-500 data-[role=assistant]:text-black data-[role=user]:text-white"

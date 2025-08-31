@@ -1,4 +1,4 @@
-# Bingwa Ordering System
+# Handyman Ordering System
 
 A modern service ordering platform with a dynamic chat interface, built on Next.js and the Vercel AI SDK.
 
@@ -13,10 +13,10 @@ A modern service ordering platform with a dynamic chat interface, built on Next.
 
 ## Architecture
 
-The Bingwa Ordering System consists of:
+The Handyman Ordering System consists of:
 
 1. **Chat Interface (Frontend)**: A Next.js application with dynamic UI components
-2. **Bingwa Server (Backend)**: A modular system of tools that power the conversation and workflow logic
+2. **Server (Backend)**: A modular system of tools that power the conversation and workflow logic
 3. **External Integrations**: Connections to payment providers, service provider databases, and order management systems
 
 ## Getting Started
