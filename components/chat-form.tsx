@@ -144,29 +144,65 @@ export function ChatForm({
       }
     }
 
-    // Check for review submission after service completion
+    // Check for review request
     if (message.role === 'assistant' && message.toolInvocations?.some(
-      (t: { toolName: string; state: string; action?: string; }) => t.toolName === 'handlePostService' && t.state === 'result' && t.action === 'review'
+      (t: { toolName: string; state: string; }) => t.toolName === 'requestReview' && t.state === 'result'
     )) {
       const toolResult = message.toolInvocations.find(
-        (t: { toolName: string; }) => t.toolName === 'handlePostService'
+        (t: { toolName: string; }) => t.toolName === 'requestReview'
       )?.result;
 
-      const orderId = toolResult?.orderId; // Assuming orderId is part of the result
+      const orderId = toolResult?.orderDetails?.orderId;
 
-      return (
-        <div className="my-4 w-full">
-          <ReviewForm
-            orderId={orderId}
-            onSubmit={(rating, comment) => {
-              append({
-                content: `I have submitted a review for order ${orderId} with ${rating} stars and comment: "${comment}".`,
-                role: 'user'
-              });
-            }}
-          />
-        </div>
-      );
+      if (orderId) {
+        return (
+          <div className="my-4 w-full">
+            <ReviewForm
+              orderId={orderId}
+              onSubmit={(rating, comment) => {
+                append({
+                  content: `I want to submit a review for order ${orderId} with rating ${rating} and comment: "${comment}".`,
+                  role: 'user'
+                });
+              }}
+            />
+          </div>
+        );
+      }
+    }
+
+    // Check for submitReview result
+    if (message.role === 'assistant' && message.toolInvocations?.some(
+      (t: { toolName: string; state: string; }) => t.toolName === 'submitReview' && t.state === 'result'
+    )) {
+      const toolResult = message.toolInvocations.find(
+        (t: { toolName: string; }) => t.toolName === 'submitReview'
+      )?.result;
+
+      if (toolResult?.message) {
+        return (
+          <div className="my-4 w-full">
+            <p>{toolResult.message}</p>
+          </div>
+        );
+      }
+    }
+
+    // Check for rebookService result
+    if (message.role === 'assistant' && message.toolInvocations?.some(
+      (t: { toolName: string; state: string; }) => t.toolName === 'rebookService' && t.state === 'result'
+    )) {
+      const toolResult = message.toolInvocations.find(
+        (t: { toolName: string; }) => t.toolName === 'rebookService'
+      )?.result;
+
+      if (toolResult?.message) {
+        return (
+          <div className="my-4 w-full">
+            <p>{toolResult.message}</p>
+          </div>
+        );
+      }
     }
 
     // Check for service provider selection
@@ -210,6 +246,7 @@ export function ChatForm({
         (t: { toolName: string; }) => t.toolName === 'createOrder'
       )?.result;
 
+      console.log()
       if (!toolResult) return null;
 
       const orderData = {
@@ -417,11 +454,18 @@ export function ChatForm({
         return (
           <div className="my-4 w-full">
             <OrderStatusCard
+              orderId={message.toolInvocations.find(t => t.toolName === 'trackOrderStatus')!.result.orderId || 'UNKNOWN_ORDER_ID'}
               status={toolResult.status}
               providerDetails={toolResult.providerDetails}
               onTrack={() => {
                 append({
                   content: 'Can you show me the current location of the service provider?',
+                  role: 'user'
+                });
+              }}
+              onUpdateStatus={(orderId, newStatus) => {
+                append({
+                  content: `Please update the status of order ${orderId} to ${newStatus}.`,
                   role: 'user'
                 });
               }}

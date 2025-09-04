@@ -1,19 +1,37 @@
 'use client'
 
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { CheckCircle, Clock, MapPin, Phone } from 'lucide-react'
 
 interface OrderStatusCardProps {
+  orderId: string;
   status: 'pending' | 'confirmed' | 'in_progress' | 'completed'
   providerDetails: {
     name: string
     phone: string
     estimatedArrival: string
   }
-  onTrack: () => void
+  onTrack: () => void;
+  onUpdateStatus: (orderId: string, newStatus: 'confirmed' | 'in_progress' | 'completed') => void;
 }
 
-export function OrderStatusCard({ status, providerDetails, onTrack }: OrderStatusCardProps) {
+export function OrderStatusCard({ orderId, status, providerDetails, onTrack, onUpdateStatus }: OrderStatusCardProps) {
+  const getNextStatus = () => {
+    switch (status) {
+      case 'pending':
+        return 'confirmed';
+      case 'confirmed':
+        return 'in_progress';
+      case 'in_progress':
+        return 'completed';
+      default:
+        return null;
+    }
+  };
+
+  const nextStatus = getNextStatus();
+
   return (
     <Card>
       <CardHeader className="text-lg font-medium">
@@ -38,6 +56,13 @@ export function OrderStatusCard({ status, providerDetails, onTrack }: OrderStatu
           <p>{providerDetails.phone}</p>
         </div>
       </CardContent>
+      {nextStatus && (
+        <CardFooter>
+          <Button onClick={() => onUpdateStatus(orderId, nextStatus as 'confirmed' | 'in_progress' | 'completed')}>
+            Mark as {nextStatus.charAt(0).toUpperCase() + nextStatus.slice(1).replace('_', ' ')}
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   )
 }

@@ -247,6 +247,7 @@ export const trackOrderStatus = tool({
   execute: async ({ orderId }) => {
     // Mock implementation - in a real system, this would query an order management system
     return {
+      orderId,
       status: 'confirmed',
       providerDetails: {
         name: 'John Kamau',
@@ -257,31 +258,57 @@ export const trackOrderStatus = tool({
   },
 });
 
-// Review & Rebooking Tool
-export const handlePostService = tool({
-  name: 'handlePostService',
-  description: 'Manages reviews and rebooking',
+// Update Order Status Tool
+export const updateOrderStatus = tool({
+  name: 'updateOrderStatus',
+  description: 'Updates the status of an existing order',
+  parameters: z.object({
+    orderId: z.string().describe('The ID of the order to update'),
+    newStatus: z.enum(['confirmed', 'in_progress', 'completed']).describe('The new status for the order')
+  }),
+  execute: async ({ orderId, newStatus }) => {
+    // Mock implementation - in a real system, this would update the order status
+    return {
+      orderId,
+      status: newStatus,
+      message: `Order ${orderId} status updated to ${newStatus}.`
+    };
+  },
+});
+
+// Submit Review Tool
+export const submitReview = tool({
+  name: 'submitReview',
+  description: 'Submits a review for a completed order',
   parameters: z.object({
     orderId: z.string().describe('The ID of the completed order'),
-    action: z.enum(['review', 'rebook']).describe('The action to perform'),
-    reviewDetails: z.object({
-      rating: z.number().min(1).max(5).describe('Rating from 1 to 5'),
-      comment: z.string().optional().describe('Review comment')
-    }).optional().describe('Review details if action is review')
+    rating: z.number().min(1).max(5).describe('Rating from 1 to 5'),
+    comment: z.string().optional().describe('Review comment')
   }),
-  execute: async ({ orderId, action, reviewDetails }) => {
-    // Mock implementation - in a real system, this would integrate with review/booking systems
-    if (action === 'review') {
-      return {
-        reviewId: `REV-${Math.floor(Math.random() * 10000)}`,
-        status: 'submitted'
-      };
-    } else {
-      return {
-        newOrderId: `ORD-${Math.floor(Math.random() * 10000)}`,
-        status: 'created'
-      };
-    }
+  execute: async ({ orderId, rating, comment }) => {
+    // Mock implementation - in a real system, this would integrate with a review system
+    return {
+      reviewId: `REV-${Math.floor(Math.random() * 10000)}`,
+      status: 'submitted',
+      message: `Review for order ${orderId} submitted successfully with rating ${rating}. Thank you for your feedback!`
+    };
+  },
+});
+
+// Rebook Service Tool
+export const rebookService = tool({
+  name: 'rebookService',
+  description: 'Rebooks a completed service',
+  parameters: z.object({
+    orderId: z.string().describe('The ID of the completed order to rebook')
+  }),
+  execute: async ({ orderId }) => {
+    // Mock implementation - in a real system, this would create a new booking
+    return {
+      newOrderId: `ORD-${Math.floor(Math.random() * 10000)}`,
+      status: 'created',
+      message: `Order ${orderId} has been rebooked. A new order with ID ORD-${Math.floor(Math.random() * 10000)} has been created.`
+    };
   },
 });
 
@@ -425,7 +452,9 @@ export const tools = {
   collectUserDetails,
   processPayment,
   trackOrderStatus,
-  handlePostService,
+  updateOrderStatus,
+  submitReview,
+  rebookService,
   getHackathonInfo,
   listServices,
   getAvailableSlots,
