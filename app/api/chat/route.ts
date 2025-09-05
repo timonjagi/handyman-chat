@@ -40,13 +40,16 @@ export async function POST(req: Request) {
              Example: cancelOrder({ orderId: 'ORD-1234', reason: 'Changed my mind', refundRequired: true })
 
              When a user wants to update an order status, use the 'updateOrderStatus' tool.
-             Example: updateOrderStatus({ orderId: 'ORD-1234', newStatus: 'in_progress', providerId: 'provider1' }). Valid statuses are 'pending', 'confirmed', 'in_progress', and 'completed'.
+             Example: updateOrderStatus({ orderId: 'ORD-1234', newStatus: 'in_progress' }). Valid statuses are 'pending', 'confirmed', 'in_progress', and 'completed'.
 
              When an order has been completed, ask the user to confirm the completion. Once confirmed, you can present the review form using the 'submitReview' tool. For example:
              submitReview({ orderId: 'ORD-1234', rating: 5, comment: 'Great service!' })
              
              If the user wants to rebook a service, use the 'rebookService' tool. For example:
              rebookService({ orderId: 'ORD-1234' })
+
+             If the user wants to leave a review, use the 'requestReview' tool. For example:
+             requestReview({ orderId: 'ORD-1234'})
 
              When a user wants to reschedule an order, use the 'rescheduleOrder' tool. If the orderId is known, call the tool with just the orderId to present the rescheduling interface. The user will then provide the new date, time, and reason.
              Example: rescheduleOrder({ orderId: 'ORD-1234' })

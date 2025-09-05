@@ -549,12 +549,7 @@ export function ChatForm({
                   role: 'user'
                 });
               }}
-              onReview={() => {
-                append({
-                  content: `I'd like to leave a review for my completed order ${toolResult.orderId}.`,
-                  role: 'user'
-                });
-              }}
+
             />
           </div>
         );
@@ -586,6 +581,12 @@ export function ChatForm({
               onUpdateStatus={(orderId, newStatus) => {
                 append({
                   content: `Please update the status of order ${orderId} to ${newStatus}.`,
+                  role: 'user'
+                });
+              }}
+              onReview={() => {
+                append({
+                  content: `I'd like to leave a review for my completed order ${toolResult.orderId}.`,
                   role: 'user'
                 });
               }}

@@ -279,11 +279,10 @@ export const trackOrderStatus = tool({
   description: 'Tracks and updates order status',
   parameters: z.object({
     orderId: z.string().describe('The ID of the order to track'),
-    providerId: z.string().describe('The ID of the selected provider'),
   }),
   execute: async (params) => {
     // Mock implementation - in a real system, this would query an order management system
-    const provider = mockProviders.find(p => p.id === params.providerId);
+    const provider = mockProviders[0]; // Assume provider1 for mock
 
     return {
       orderId: params.orderId,
@@ -369,11 +368,11 @@ export const requestReview = tool({
   description: 'Requests a review for a completed service',
   parameters: z.object({
     orderId: z.string().describe('The ID of the completed order'),
-    providerId: z.string().describe('The ID of the service provider'),
-    serviceId: z.string().describe('The ID of the service provided')
   }),
-  execute: async ({ orderId, providerId, serviceId }) => {
+  execute: async ({ orderId }) => {
     // Mock implementation - in a real system, this would check if the order is completed
+    const providerId = 'provider1'; // Assume provider1 for mock
+    const serviceId = 'service1'; // Assume service1 for mock
     return {
       canReview: true,
       orderDetails: {
