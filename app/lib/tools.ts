@@ -14,6 +14,7 @@ export const listServices = tool({
   }),
   execute: async ({ category }) => {
     return {
+      message: `Here are the available ${category ? category : ''} services:`,
       services: category
         ? mockServices.filter(s => s.category === category)
         : mockServices
@@ -64,7 +65,7 @@ export const resolveVariant = tool({
     const variants = mockVariantsByService[serviceId as keyof typeof mockVariantsByService] || [];
     const recommendedVariant = variants.length > 0 ? variants[0] : null;
 
-    return { variants, recommendedVariant };
+    return { message: 'Here are the available variants for this service:', variants, recommendedVariant };
   },
 });
 
@@ -116,6 +117,7 @@ export const selectProvider = tool({
       : null;
 
     return {
+      message: `Here are the available providers for ${serviceId}:`,
       providers: availableProviders,
       autoAssigned
     };
@@ -128,6 +130,7 @@ export const mockProviders = [
     name: 'John Kamau',
     rating: 4.8,
     completedJobs: 156,
+    phone: '0712345678',
     services: ['plumbing', 'electrical'],
     photo: '/placeholder-user.jpg'
   },
@@ -136,6 +139,7 @@ export const mockProviders = [
     name: 'Mary Wanjiku',
     rating: 4.9,
     completedJobs: 203,
+    phone: '0798765432',
     services: ['cleaning', 'painting'],
     photo: '/placeholder-user.jpg'
   },
@@ -144,6 +148,7 @@ export const mockProviders = [
     name: 'David Omondi',
     rating: 4.7,
     completedJobs: 98,
+    phone: '0723456789',
     services: ['carpentry', 'painting'],
     photo: '/placeholder-user.jpg'
   },
@@ -151,11 +156,41 @@ export const mockProviders = [
     id: 'provider4',
     name: 'Sarah Njeri',
     rating: 4.6,
+    phone: '0734567890',
     completedJobs: 87,
     services: ['plumbing', 'electrical', 'carpentry'],
     photo: '/placeholder-user.jpg'
   }
 ];
+
+// Available Slots Tool
+export const getAvailableSlots = tool({
+  name: 'getAvailableSlots',
+  description: 'Gets available time slots for service booking',
+  parameters: z.object({
+    serviceId: z.string().describe('The ID of the selected service'),
+    providerId: z.string().optional().describe('The ID of the selected provider'),
+    date: z.string().describe('The date to check availability for'),
+  }),
+  execute: async ({ serviceId, providerId, date }) => {
+    // Mock implementation - in a real system, this would query a scheduling system
+    const mockSlots = [
+      '09:00 AM',
+      '10:00 AM',
+      '11:00 AM',
+      '02:00 PM',
+      '03:00 PM',
+      '04:00 PM'
+    ];
+
+    return {
+      message: `Here are the available slots for ${serviceId} on ${date}:`,
+      date,
+      slots: mockSlots,
+      provider: providerId
+    };
+  },
+});
 
 // Order Creation Tool
 export const createOrder = tool({
@@ -186,6 +221,7 @@ export const createOrder = tool({
     const amount = variant?.price || (params.variantId?.includes('basic') ? 2000 : 5000); // Use variant price if available, else simplified logic
 
     return {
+      message: 'Order created successfully',
       orderId,
       status: 'pending',
       paymentRequired: true,
@@ -242,18 +278,23 @@ export const trackOrderStatus = tool({
   name: 'trackOrderStatus',
   description: 'Tracks and updates order status',
   parameters: z.object({
-    orderId: z.string().describe('The ID of the order to track')
+    orderId: z.string().describe('The ID of the order to track'),
+    providerId: z.string().describe('The ID of the selected provider'),
   }),
-  execute: async ({ orderId }) => {
+  execute: async (params) => {
     // Mock implementation - in a real system, this would query an order management system
+    const provider = mockProviders.find(p => p.id === params.providerId);
+
     return {
-      orderId,
+      orderId: params.orderId,
       status: 'confirmed',
       providerDetails: {
-        name: 'John Kamau',
-        phone: '+254712345678',
-        estimatedArrival: '2 hours'
-      }
+        id: provider?.id || 'Unknown',
+        name: provider?.name || 'Unknown Provider',
+        rating: provider?.rating || 0,
+        phone: provider?.phone || 'N/A'
+      },
+      estimatedArrival: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
     };
   },
 });
@@ -264,14 +305,23 @@ export const updateOrderStatus = tool({
   description: 'Updates the status of an existing order',
   parameters: z.object({
     orderId: z.string().describe('The ID of the order to update'),
+    providerId: z.string().describe('The ID of the selected provider'),
     newStatus: z.enum(['confirmed', 'in_progress', 'completed']).describe('The new status for the order')
   }),
-  execute: async ({ orderId, newStatus }) => {
+  execute: async (params) => {
     // Mock implementation - in a real system, this would update the order status
+    const provider = mockProviders.find(p => p.id === params.providerId);
+
     return {
-      orderId,
-      status: newStatus,
-      message: `Order ${orderId} status updated to ${newStatus}.`
+      orderId: params.orderId,
+      status: params.newStatus,
+      message: `Order ${params.orderId} status updated to ${params.newStatus}.`,
+      providerDetails: {
+        id: provider?.id || 'Unknown',
+        name: provider?.name || 'Unknown Provider',
+        rating: provider?.rating || 0,
+        phone: provider?.phone || 'N/A'
+      },
     };
   },
 });
@@ -312,49 +362,6 @@ export const rebookService = tool({
   },
 });
 
-// Legacy tool for backward compatibility
-export const getHackathonInfo = tool({
-  name: 'getHackathonInfo',
-  description: 'Get information about the world\'s shortest hackathon',
-  parameters: z.object({}),
-  execute: async () => {
-    // Mock data
-    return { attendees: 1000 };
-  },
-});
-
-
-// Available Slots Tool
-export const getAvailableSlots = tool({
-  name: 'getAvailableSlots',
-  description: 'Gets available time slots for service booking',
-  parameters: z.object({
-    serviceId: z.string().describe('The ID of the selected service'),
-    providerId: z.string().optional().describe('The ID of the selected provider'),
-    date: z.string().describe('The date to check availability for'),
-    location: z.object({
-      city: z.string().describe('City name'),
-      area: z.string().optional().describe('Specific area within the city')
-    }).describe('Location for the service')
-  }),
-  execute: async ({ serviceId, providerId, date }) => {
-    // Mock implementation - in a real system, this would query a scheduling system
-    const mockSlots = [
-      '09:00 AM',
-      '10:00 AM',
-      '11:00 AM',
-      '02:00 PM',
-      '03:00 PM',
-      '04:00 PM'
-    ];
-
-    return {
-      date,
-      slots: mockSlots,
-      provider: providerId
-    };
-  },
-});
 
 // Request Review Tool
 export const requestReview = tool({
@@ -455,7 +462,6 @@ export const tools = {
   updateOrderStatus,
   submitReview,
   rebookService,
-  getHackathonInfo,
   listServices,
   getAvailableSlots,
   requestReview

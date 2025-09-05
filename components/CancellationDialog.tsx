@@ -47,8 +47,11 @@ export function CancellationDialog({ orderId, isOpen, onClose, onConfirm }: Canc
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button 
-            onClick={() => onConfirm(reason, refundRequired)}
+          <Button
+            onClick={() => {
+              onConfirm(reason, refundRequired)
+              onClose()
+            }}
             disabled={!reason.trim()}
           >
             Confirm Cancellation
