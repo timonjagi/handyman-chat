@@ -6,6 +6,11 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
 interface UserDetailsFormProps {
+  name: string
+  phone: string
+  address: string
+  area: string
+  city: string
   onSubmit: (details: {
     name: string
     phone: string
@@ -15,13 +20,13 @@ interface UserDetailsFormProps {
   }) => void
 }
 
-export function UserDetailsForm({ onSubmit }: UserDetailsFormProps) {
+export function UserDetailsForm({ name, phone, address, area, city, onSubmit }: UserDetailsFormProps) {
   const [details, setDetails] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    area: '',
-    city: ''
+    name: name || '',
+    phone: phone || '',
+    address: address || '',
+    area: area || '',
+    city: city || ''
   })
 
   return (
@@ -53,12 +58,12 @@ export function UserDetailsForm({ onSubmit }: UserDetailsFormProps) {
           value={details.city}
           onChange={(e) => setDetails({ ...details, city: e.target.value })}
         />
-        <Button 
-          className="w-full" 
+        <Button
+          className="w-full"
           onClick={() => onSubmit(details)}
           disabled={!details.name || !details.phone || !details.city}
         >
-          Continue
+          Confirm Details
         </Button>
       </CardContent>
     </Card>

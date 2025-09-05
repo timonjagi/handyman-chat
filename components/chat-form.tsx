@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useLayoutEffect, useRef, useState, RefObject } from 'react'
 import { cn } from '@/lib/utils'
 import { useChat } from 'ai/react'
 import { ArrowUpIcon } from 'lucide-react'
@@ -23,9 +23,14 @@ export function ChatForm({
   className,
   ...props
 }: React.ComponentProps<'form'>) {
-  const { messages, input, setInput, append } = useChat({
+  const { messages, input, setInput, append, isLoading } = useChat({
     api: '/api/chat',
   })
+
+  const [isCancellationDialogOpen, setIsCancellationDialogOpen] = useState(false);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const prevMessagesLength = useRef<number>(0);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -39,6 +44,45 @@ export function ChatForm({
       handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>)
     }
   }
+
+  useLayoutEffect(() => {
+    // Ensure the ref is available and there are messages to scroll to
+    // Scroll only if new messages have been added
+    if (messagesEndRef.current && messages.length > prevMessagesLength.current) {
+      // Use setTimeout to ensure the DOM has updated before scrolling
+      // and requestAnimationFrame to ensure it's called after paint
+      const timerId = setTimeout(() => {
+        requestAnimationFrame(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); // Reverted to 'smooth' and added setTimeout
+        });
+      }, 0); // A small delay might be needed, but 0 with requestAnimationFrame is often enough
+
+      return () => clearTimeout(timerId);
+    }
+    prevMessagesLength.current = messages.length;
+  }, [messages]);
+
+  // Use MutationObserver to detect DOM changes for more reliable scrolling
+  useLayoutEffect(() => {
+    const observer = new MutationObserver(() => {
+      if (messagesEndRef.current && messages.length > 0) {
+        requestAnimationFrame(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        });
+      }
+    });
+
+    // Observe the message list for changes in child nodes
+    const messageListElement = document.querySelector('.my-4.flex.h-fit.min-h-full.flex-col.gap-4');
+    if (messageListElement) {
+      observer.observe(messageListElement, { childList: true, subtree: true });
+    }
+
+    // Cleanup the observer on component unmount
+    return () => {
+      observer.disconnect();
+    };
+  }, [messages]); // Re-run if messages change
 
   const header = (
     <header className="m-auto flex max-w-96 flex-col gap-5 text-center">
@@ -77,6 +121,9 @@ export function ChatForm({
       if (toolResult?.services?.length > 0) {
         return (
           <div className="my-4 w-full">
+
+            <div>{toolResult.message || ''}</div>
+            <br />
             <ServiceSelectionCard
               services={toolResult.services}
               onSelect={(serviceId) => {
@@ -86,6 +133,12 @@ export function ChatForm({
                 });
               }}
             />
+          </div>
+        );
+      } else {
+        return (
+          <div className="my-4 w-full">
+            <p>No services available at the moment for the selected category. Would you like to try a different category?</p>
           </div>
         );
       }
@@ -101,6 +154,8 @@ export function ChatForm({
       if (toolResult?.variants?.length > 0) {
         return (
           <div className="my-4 w-full">
+            <div>{toolResult.message || ''}</div>
+            <br />
             <ServiceVariantCard
               variants={toolResult.variants}
               recommendedVariant={toolResult.recommendedVariant}
@@ -111,6 +166,12 @@ export function ChatForm({
                 });
               }}
             />
+          </div>
+        );
+      } else {
+        return (
+          <div className="my-4 w-full">
+            <p>No variants available for the selected service.</p>
           </div>
         );
       }
@@ -127,6 +188,9 @@ export function ChatForm({
       if (toolResult?.slots) {
         return (
           <div className="my-4 w-full">
+
+            <div>{toolResult.message || ''}</div>
+            <br />
             <BookingSchedule
               availableSlots={toolResult.slots}
               onDateSelect={(date) => {
@@ -144,29 +208,65 @@ export function ChatForm({
       }
     }
 
-    // Check for review submission after service completion
+    // Check for review request
     if (message.role === 'assistant' && message.toolInvocations?.some(
-      (t: { toolName: string; state: string; action?: string; }) => t.toolName === 'handlePostService' && t.state === 'result' && t.action === 'review'
+      (t: { toolName: string; state: string; }) => t.toolName === 'requestReview' && t.state === 'result'
     )) {
       const toolResult = message.toolInvocations.find(
-        (t: { toolName: string; }) => t.toolName === 'handlePostService'
+        (t: { toolName: string; }) => t.toolName === 'requestReview'
       )?.result;
 
-      const orderId = toolResult?.orderId; // Assuming orderId is part of the result
+      const orderId = toolResult?.orderDetails?.orderId;
 
-      return (
-        <div className="my-4 w-full">
-          <ReviewForm
-            orderId={orderId}
-            onSubmit={(rating, comment) => {
-              append({
-                content: `I have submitted a review for order ${orderId} with ${rating} stars and comment: "${comment}".`,
-                role: 'user'
-              });
-            }}
-          />
-        </div>
-      );
+      if (orderId) {
+        return (
+          <div className="my-4 w-full">
+            <ReviewForm
+              orderId={orderId}
+              onSubmit={(rating, comment) => {
+                append({
+                  content: `I want to submit a review for order ${orderId} with rating ${rating} and comment: "${comment}".`,
+                  role: 'user'
+                });
+              }}
+            />
+          </div>
+        );
+      }
+    }
+
+    // Check for submitReview result
+    if (message.role === 'assistant' && message.toolInvocations?.some(
+      (t: { toolName: string; state: string; }) => t.toolName === 'submitReview' && t.state === 'result'
+    )) {
+      const toolResult = message.toolInvocations.find(
+        (t: { toolName: string; }) => t.toolName === 'submitReview'
+      )?.result;
+
+      if (toolResult?.message) {
+        return (
+          <div className="my-4 w-full">
+            <p>{toolResult.message}</p>
+          </div>
+        );
+      }
+    }
+
+    // Check for rebookService result
+    if (message.role === 'assistant' && message.toolInvocations?.some(
+      (t: { toolName: string; state: string; }) => t.toolName === 'rebookService' && t.state === 'result'
+    )) {
+      const toolResult = message.toolInvocations.find(
+        (t: { toolName: string; }) => t.toolName === 'rebookService'
+      )?.result;
+
+      if (toolResult?.message) {
+        return (
+          <div className="my-4 w-full">
+            <p>{toolResult.message}</p>
+          </div>
+        );
+      }
     }
 
     // Check for service provider selection
@@ -189,7 +289,7 @@ export function ChatForm({
                   onSelect={(providerId) => {
                     console.log(`Selected provider: ${providerId}`);
                     append({
-                      content: `I'd like to select ${provider.name} as my service provider.`,
+                      content: `I'd like to select ${provider.name} as my service provider. Please show me the available time slots.`,
                       role: 'user'
                     });
                   }}
@@ -209,30 +309,29 @@ export function ChatForm({
       const toolResult = message.toolInvocations.find(
         (t: { toolName: string; }) => t.toolName === 'createOrder'
       )?.result;
-
       if (!toolResult) return null;
 
       const orderData = {
         orderId: toolResult.orderId,
         service: {
-          name: toolResult.serviceName || 'Unknown Service',
-          variant: toolResult.serviceVariantName ? {
-            name: toolResult.serviceVariantName,
-            price: toolResult.serviceVariantPrice || toolResult.amount
+          name: toolResult.service?.name || 'Unknown Service',
+          variant: toolResult.service?.variant?.name ? {
+            name: toolResult.service?.variant?.name,
+            price: toolResult.service?.variant?.price || toolResult.amount
           } : undefined
         },
         provider: {
-          name: toolResult.providerName || 'Unknown Provider'
+          name: toolResult?.provider?.name || 'Unknown Provider'
         },
         location: {
-          area: toolResult.locationArea || 'Unknown Area',
-          city: toolResult.locationCity || 'Unknown City',
-          details: toolResult.locationDetails
+          area: toolResult?.location?.area || 'Unknown Area',
+          city: toolResult?.location?.city || 'Unknown City',
+          details: toolResult?.location?.details
         },
         scheduledTime: toolResult.scheduledTime || 'Unknown Time',
         customer: {
-          name: toolResult.customerName || 'Unknown Customer',
-          phone: toolResult.customerPhone || 'N/A'
+          name: toolResult.customer?.name || 'Unknown Customer',
+          phone: toolResult.customer?.phone || 'N/A'
         },
         amount: toolResult.amount,
         currency: toolResult.currency
@@ -304,12 +403,22 @@ export function ChatForm({
     if (message.role === 'assistant' && message.toolInvocations?.some(
       (t: { toolName: string; state: string; }) => t.toolName === 'collectUserDetails' && t.state === 'result'
     )) {
+
+      const toolResult = message.toolInvocations.find(
+        (t: { toolName: string; }) => t.toolName === 'collectUserDetails'
+      )?.result;
+
       return (
         <div className="my-4 w-full">
           <UserDetailsForm
+            name={toolResult.details.name}
+            phone={toolResult.details.phone}
+            address={toolResult.details.address}
+            area={toolResult.details.area}
+            city={toolResult.details.city}
             onSubmit={(details) => {
               append({
-                content: `My details - Name: ${details.name}, Phone: ${details.phone}, Address: ${details.address}, Area: ${details.area}, City: ${details.city}`,
+                content: `I've confirmed my details - Name: ${details.name}, Phone: ${details.phone}, Address: ${details.address}, Area: ${details.area}, City: ${details.city}`,
                 role: 'user'
               });
             }}
@@ -326,12 +435,18 @@ export function ChatForm({
         (t: { toolName: string; }) => t.toolName === 'cancelOrder'
       )?.result;
 
+      // Logic to manage dialog visibility
+      if (toolResult?.orderId && !isCancellationDialogOpen) {
+        setIsCancellationDialogOpen(true);
+      }
+
       return (
         <div className="my-4 w-full">
           <CancellationDialog
             orderId={toolResult?.orderId}
-            isOpen={true}
+            isOpen={isCancellationDialogOpen} // Use state variable
             onClose={() => {
+              setIsCancellationDialogOpen(false); // Close dialog
               append({
                 content: 'I changed my mind, I don\'t want to cancel the order.',
                 role: 'user'
@@ -342,6 +457,7 @@ export function ChatForm({
                 content: `I want to cancel the order. Reason: ${reason}. ${refundRequired ? 'I need a refund.' : 'No refund needed.'}`,
                 role: 'user'
               });
+              setIsCancellationDialogOpen(false); // Close dialog after confirm
             }}
           />
         </div>
@@ -350,7 +466,7 @@ export function ChatForm({
 
     // Check for order rescheduling interface
     if (message.role === 'assistant' && message.toolInvocations?.some(
-      (t: { toolName: string; state: string; }) => t.toolName === 'rescheduleOrder' && t.state === 'start'
+      (t: { toolName: string; state: string; }) => t.toolName === 'rescheduleOrder' && t.state === 'result'
     )) {
       const toolInvocation = message.toolInvocations.find(
         (t: { toolName: string; }) => t.toolName === 'rescheduleOrder'
@@ -358,6 +474,18 @@ export function ChatForm({
 
       // Assuming orderId is passed in the initial tool invocation parameters
       const orderId = toolInvocation?.result?.orderId || 'UNKNOWN_ORDER_ID'; // Adjust based on actual tool invocation structure
+      const toolResult = message.toolInvocations.find(
+        (t: { toolName: string; }) => t.toolName === 'rescheduleOrder'
+      )?.result;
+
+      if (toolResult?.status === 'rescheduled') {
+        return (
+          <div className="my-4 w-full">
+            <p>Your order has been successfully rescheduled!</p>
+            <p>New Date/Time: {toolResult.newSchedule.dateTime}</p>
+          </div>
+        );
+      }
 
       return (
         <div className="my-4 w-full">
@@ -387,24 +515,6 @@ export function ChatForm({
         </div>
       );
     }
-    // Check for order rescheduling result
-    if (message.role === 'assistant' && message.toolInvocations?.some(
-      (t: { toolName: string; state: string; }) => t.toolName === 'rescheduleOrder' && t.state === 'result'
-    )) {
-      const toolResult = message.toolInvocations.find(
-        (t: { toolName: string; }) => t.toolName === 'rescheduleOrder'
-      )?.result;
-
-      if (toolResult?.status === 'rescheduled') {
-        return (
-          <div className="my-4 w-full">
-            <p>Your order has been successfully rescheduled!</p>
-            <p>New Date/Time: {toolResult.newSchedule.dateTime}</p>
-          </div>
-        );
-      }
-    }
-
     // Check for order status updates
     if (message.role === 'assistant' && message.toolInvocations?.some(
       (t: { toolName: string; state: string; }) => t.toolName === 'trackOrderStatus' && t.state === 'result'
@@ -417,11 +527,60 @@ export function ChatForm({
         return (
           <div className="my-4 w-full">
             <OrderStatusCard
+              orderId={message.toolInvocations.find(t => t.toolName === 'trackOrderStatus')!.result.orderId || 'UNKNOWN_ORDER_ID'}
+              status={toolResult.status}
+              providerDetails={toolResult.providerDetails}
+              estimatedArrival={toolResult.estimatedArrival}
+              onTrack={() => {
+                append({
+                  content: 'Can you show me the current location of the service provider?',
+                  role: 'user'
+                });
+              }}
+              onUpdateStatus={(orderId, newStatus) => {
+                append({
+                  content: `Please update the status of order ${orderId} to ${newStatus}.`,
+                  role: 'user'
+                });
+              }}
+
+            />
+          </div>
+        );
+      }
+    }
+
+
+    // Check for order status updates
+    if (message.role === 'assistant' && message.toolInvocations?.some(
+      (t: { toolName: string; state: string; }) => t.toolName === 'updateOrderStatus' && t.state === 'result'
+    )) {
+      const toolResult = message.toolInvocations.find(
+        (t: { toolName: string; }) => t.toolName === 'updateOrderStatus'
+      )?.result;
+
+      if (toolResult?.status) {
+        return (
+          <div className="my-4 w-full">
+            <OrderStatusCard
+              orderId={message.toolInvocations.find(t => t.toolName === 'updateOrderStatus')!.result.orderId || 'UNKNOWN_ORDER_ID'}
               status={toolResult.status}
               providerDetails={toolResult.providerDetails}
               onTrack={() => {
                 append({
-                  content: 'Can you show me the current location of the service provider?',
+                  content: 'Can you show me the current status of the order?',
+                  role: 'user'
+                });
+              }}
+              onUpdateStatus={(orderId, newStatus) => {
+                append({
+                  content: `Please update the status of order ${orderId} to ${newStatus}.`,
+                  role: 'user'
+                });
+              }}
+              onReview={() => {
+                append({
+                  content: `I'd like to leave a review for my completed order ${toolResult.orderId}.`,
                   role: 'user'
                 });
               }}
@@ -431,16 +590,8 @@ export function ChatForm({
       }
     }
 
-
-
     // Add loading state
-    if (message.role === 'assistant' && message.content === '') {
-      return (
-        <div className="my-4 w-full flex items-center justify-center">reply: {JSON.stringify(message)}
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
-      );
-    }
+
 
     return null;
   };
@@ -448,8 +599,13 @@ export function ChatForm({
   const messageList = (
     <div className="my-4 flex h-fit min-h-full flex-col gap-4">
       {messages.map((message, index) => {
+        const isLastMessage = index === messages.length - 1;
         return (
-          <div key={index} className={cn("flex flex-col", message.role === 'user' ? "items-end" : "items-start")}>
+          <div
+            key={index}
+            ref={isLastMessage ? messagesEndRef : null}
+            className={cn("flex flex-col", message.role === 'user' ? "items-end" : "items-start")}
+          >
             {message.content &&
               <div
                 data-role={message.role}
@@ -459,8 +615,15 @@ export function ChatForm({
               </div>
             }
             {message.role === 'assistant' && renderDynamicComponent(message)}
+
+            {isLoading && isLastMessage && (
+              <div className="my-4 w-full flex items-center justify-start">
+                <div className="mt-2 h-4 w-4 animate-bounce rounded-full bg-gray-300"> </div>
+              </div>)}
           </div>
         );
+
+
       })}
     </div>
   )

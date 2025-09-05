@@ -14,6 +14,7 @@ export const listServices = tool({
   }),
   execute: async ({ category }) => {
     return {
+      message: `Here are the available ${category ? category : ''} services:`,
       services: category
         ? mockServices.filter(s => s.category === category)
         : mockServices
@@ -64,7 +65,7 @@ export const resolveVariant = tool({
     const variants = mockVariantsByService[serviceId as keyof typeof mockVariantsByService] || [];
     const recommendedVariant = variants.length > 0 ? variants[0] : null;
 
-    return { variants, recommendedVariant };
+    return { message: 'Here are the available variants for this service:', variants, recommendedVariant };
   },
 });
 
@@ -116,6 +117,7 @@ export const selectProvider = tool({
       : null;
 
     return {
+      message: `Here are the available providers for ${serviceId}:`,
       providers: availableProviders,
       autoAssigned
     };
@@ -128,6 +130,7 @@ export const mockProviders = [
     name: 'John Kamau',
     rating: 4.8,
     completedJobs: 156,
+    phone: '0712345678',
     services: ['plumbing', 'electrical'],
     photo: '/placeholder-user.jpg'
   },
@@ -136,6 +139,7 @@ export const mockProviders = [
     name: 'Mary Wanjiku',
     rating: 4.9,
     completedJobs: 203,
+    phone: '0798765432',
     services: ['cleaning', 'painting'],
     photo: '/placeholder-user.jpg'
   },
@@ -144,6 +148,7 @@ export const mockProviders = [
     name: 'David Omondi',
     rating: 4.7,
     completedJobs: 98,
+    phone: '0723456789',
     services: ['carpentry', 'painting'],
     photo: '/placeholder-user.jpg'
   },
@@ -151,11 +156,41 @@ export const mockProviders = [
     id: 'provider4',
     name: 'Sarah Njeri',
     rating: 4.6,
+    phone: '0734567890',
     completedJobs: 87,
     services: ['plumbing', 'electrical', 'carpentry'],
     photo: '/placeholder-user.jpg'
   }
 ];
+
+// Available Slots Tool
+export const getAvailableSlots = tool({
+  name: 'getAvailableSlots',
+  description: 'Gets available time slots for service booking',
+  parameters: z.object({
+    serviceId: z.string().describe('The ID of the selected service'),
+    providerId: z.string().optional().describe('The ID of the selected provider'),
+    date: z.string().describe('The date to check availability for'),
+  }),
+  execute: async ({ serviceId, providerId, date }) => {
+    // Mock implementation - in a real system, this would query a scheduling system
+    const mockSlots = [
+      '09:00 AM',
+      '10:00 AM',
+      '11:00 AM',
+      '02:00 PM',
+      '03:00 PM',
+      '04:00 PM'
+    ];
+
+    return {
+      message: `Here are the available slots for ${serviceId} on ${date}:`,
+      date,
+      slots: mockSlots,
+      provider: providerId
+    };
+  },
+});
 
 // Order Creation Tool
 export const createOrder = tool({
@@ -186,6 +221,7 @@ export const createOrder = tool({
     const amount = variant?.price || (params.variantId?.includes('basic') ? 2000 : 5000); // Use variant price if available, else simplified logic
 
     return {
+      message: 'Order created successfully',
       orderId,
       status: 'pending',
       paymentRequired: true,
@@ -242,92 +278,89 @@ export const trackOrderStatus = tool({
   name: 'trackOrderStatus',
   description: 'Tracks and updates order status',
   parameters: z.object({
-    orderId: z.string().describe('The ID of the order to track')
+    orderId: z.string().describe('The ID of the order to track'),
   }),
-  execute: async ({ orderId }) => {
+  execute: async (params) => {
     // Mock implementation - in a real system, this would query an order management system
+    const provider = mockProviders[0]; // Assume provider1 for mock
+
     return {
+      orderId: params.orderId,
       status: 'confirmed',
       providerDetails: {
-        name: 'John Kamau',
-        phone: '+254712345678',
-        estimatedArrival: '2 hours'
-      }
+        id: provider?.id || 'Unknown',
+        name: provider?.name || 'Unknown Provider',
+        rating: provider?.rating || 0,
+        phone: provider?.phone || 'N/A'
+      },
+      estimatedArrival: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
     };
   },
 });
 
-// Review & Rebooking Tool
-export const handlePostService = tool({
-  name: 'handlePostService',
-  description: 'Manages reviews and rebooking',
+// Update Order Status Tool
+export const updateOrderStatus = tool({
+  name: 'updateOrderStatus',
+  description: 'Updates the status of an existing order',
   parameters: z.object({
-    orderId: z.string().describe('The ID of the completed order'),
-    action: z.enum(['review', 'rebook']).describe('The action to perform'),
-    reviewDetails: z.object({
-      rating: z.number().min(1).max(5).describe('Rating from 1 to 5'),
-      comment: z.string().optional().describe('Review comment')
-    }).optional().describe('Review details if action is review')
+    orderId: z.string().describe('The ID of the order to update'),
+    providerId: z.string().describe('The ID of the selected provider'),
+    newStatus: z.enum(['confirmed', 'in_progress', 'completed']).describe('The new status for the order')
   }),
-  execute: async ({ orderId, action, reviewDetails }) => {
-    // Mock implementation - in a real system, this would integrate with review/booking systems
-    if (action === 'review') {
-      return {
-        reviewId: `REV-${Math.floor(Math.random() * 10000)}`,
-        status: 'submitted'
-      };
-    } else {
-      return {
-        newOrderId: `ORD-${Math.floor(Math.random() * 10000)}`,
-        status: 'created'
-      };
-    }
-  },
-});
-
-// Legacy tool for backward compatibility
-export const getHackathonInfo = tool({
-  name: 'getHackathonInfo',
-  description: 'Get information about the world\'s shortest hackathon',
-  parameters: z.object({}),
-  execute: async () => {
-    // Mock data
-    return { attendees: 1000 };
-  },
-});
-
-
-// Available Slots Tool
-export const getAvailableSlots = tool({
-  name: 'getAvailableSlots',
-  description: 'Gets available time slots for service booking',
-  parameters: z.object({
-    serviceId: z.string().describe('The ID of the selected service'),
-    providerId: z.string().optional().describe('The ID of the selected provider'),
-    date: z.string().describe('The date to check availability for'),
-    location: z.object({
-      city: z.string().describe('City name'),
-      area: z.string().optional().describe('Specific area within the city')
-    }).describe('Location for the service')
-  }),
-  execute: async ({ serviceId, providerId, date }) => {
-    // Mock implementation - in a real system, this would query a scheduling system
-    const mockSlots = [
-      '09:00 AM',
-      '10:00 AM',
-      '11:00 AM',
-      '02:00 PM',
-      '03:00 PM',
-      '04:00 PM'
-    ];
+  execute: async (params) => {
+    // Mock implementation - in a real system, this would update the order status
+    const provider = mockProviders.find(p => p.id === params.providerId);
 
     return {
-      date,
-      slots: mockSlots,
-      provider: providerId
+      orderId: params.orderId,
+      status: params.newStatus,
+      message: `Order ${params.orderId} status updated to ${params.newStatus}.`,
+      providerDetails: {
+        id: provider?.id || 'Unknown',
+        name: provider?.name || 'Unknown Provider',
+        rating: provider?.rating || 0,
+        phone: provider?.phone || 'N/A'
+      },
     };
   },
 });
+
+// Submit Review Tool
+export const submitReview = tool({
+  name: 'submitReview',
+  description: 'Submits a review for a completed order',
+  parameters: z.object({
+    orderId: z.string().describe('The ID of the completed order'),
+    rating: z.number().min(1).max(5).describe('Rating from 1 to 5'),
+    comment: z.string().optional().describe('Review comment')
+  }),
+  execute: async ({ orderId, rating, comment }) => {
+    // Mock implementation - in a real system, this would integrate with a review system
+    return {
+      reviewId: `REV-${Math.floor(Math.random() * 10000)}`,
+      status: 'submitted',
+      message: `Review for order ${orderId} submitted successfully with rating ${rating}. Thank you for your feedback!`
+    };
+  },
+});
+
+// Rebook Service Tool
+export const rebookService = tool({
+  name: 'rebookService',
+  description: 'Rebooks a completed service',
+  parameters: z.object({
+    orderId: z.string().describe('The ID of the completed order to rebook')
+  }),
+  execute: async ({ orderId }) => {
+    // Mock implementation - in a real system, this would create a new booking
+    return {
+      newOrderId: `ORD-${Math.floor(Math.random() * 10000)}`,
+      status: 'created',
+      message: `Order ${orderId} has been rebooked. A new order with ID ORD-${Math.floor(Math.random() * 10000)} has been created.`
+    };
+  },
+});
+
 
 // Request Review Tool
 export const requestReview = tool({
@@ -335,11 +368,11 @@ export const requestReview = tool({
   description: 'Requests a review for a completed service',
   parameters: z.object({
     orderId: z.string().describe('The ID of the completed order'),
-    providerId: z.string().describe('The ID of the service provider'),
-    serviceId: z.string().describe('The ID of the service provided')
   }),
-  execute: async ({ orderId, providerId, serviceId }) => {
+  execute: async ({ orderId }) => {
     // Mock implementation - in a real system, this would check if the order is completed
+    const providerId = 'provider1'; // Assume provider1 for mock
+    const serviceId = 'service1'; // Assume service1 for mock
     return {
       canReview: true,
       orderDetails: {
@@ -406,8 +439,12 @@ export const rescheduleOrder = tool({
   }),
   execute: async ({ orderId, newDateTime, reason }) => {
     // Mock implementation - in a real system, this would check availability and update scheduling
+    console.log('Rescheduling order:', { orderId, newDateTime, reason });
+
     return {
       status: 'rescheduled',
+      orderId,
+      message: `Order ${orderId} has been rescheduled to ${newDateTime}.`,
       newSchedule: {
         dateTime: newDateTime,
         confirmed: true
@@ -425,8 +462,9 @@ export const tools = {
   collectUserDetails,
   processPayment,
   trackOrderStatus,
-  handlePostService,
-  getHackathonInfo,
+  updateOrderStatus,
+  submitReview,
+  rebookService,
   listServices,
   getAvailableSlots,
   requestReview
