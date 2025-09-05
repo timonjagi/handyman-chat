@@ -51,9 +51,7 @@ export async function POST(req: Request) {
              If the user wants to leave a review, use the 'requestReview' tool. For example:
              requestReview({ orderId: 'ORD-1234'})
 
-             When a user wants to reschedule an order, use the 'rescheduleOrder' tool. If the orderId is known, call the tool with just the orderId to present the rescheduling interface. The user will then provide the new date, time, and reason.
-             Example: rescheduleOrder({ orderId: 'ORD-1234' })
-             Once the user provides the new date and time, and optionally a reason, call the 'rescheduleOrder' tool again with all the collected details.
+             When a user wants to reschedule an order, use the 'rescheduleOrder' tool. Call the tool with just the orderId to present the rescheduling interface. The state should be 'start'. The user will then provide the new date, time, and reason.Once the user provides the new date and time, and optionally a reason, call the 'rescheduleOrder' tool again with all the collected details.
              Example: rescheduleOrder({ orderId: 'ORD-1234', newDateTime: '2025-09-02T14:00:00Z', reason: 'Provider unavailable' })
 
             `,

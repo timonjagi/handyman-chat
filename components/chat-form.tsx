@@ -466,7 +466,7 @@ export function ChatForm({
 
     // Check for order rescheduling interface
     if (message.role === 'assistant' && message.toolInvocations?.some(
-      (t: { toolName: string; state: string; }) => t.toolName === 'rescheduleOrder' && t.state === 'start'
+      (t: { toolName: string; state: string; }) => t.toolName === 'rescheduleOrder' && t.state === 'result'
     )) {
       const toolInvocation = message.toolInvocations.find(
         (t: { toolName: string; }) => t.toolName === 'rescheduleOrder'
@@ -474,6 +474,18 @@ export function ChatForm({
 
       // Assuming orderId is passed in the initial tool invocation parameters
       const orderId = toolInvocation?.result?.orderId || 'UNKNOWN_ORDER_ID'; // Adjust based on actual tool invocation structure
+      const toolResult = message.toolInvocations.find(
+        (t: { toolName: string; }) => t.toolName === 'rescheduleOrder'
+      )?.result;
+
+      if (toolResult?.status === 'rescheduled') {
+        return (
+          <div className="my-4 w-full">
+            <p>Your order has been successfully rescheduled!</p>
+            <p>New Date/Time: {toolResult.newSchedule.dateTime}</p>
+          </div>
+        );
+      }
 
       return (
         <div className="my-4 w-full">
@@ -503,24 +515,6 @@ export function ChatForm({
         </div>
       );
     }
-    // Check for order rescheduling result
-    if (message.role === 'assistant' && message.toolInvocations?.some(
-      (t: { toolName: string; state: string; }) => t.toolName === 'rescheduleOrder' && t.state === 'result'
-    )) {
-      const toolResult = message.toolInvocations.find(
-        (t: { toolName: string; }) => t.toolName === 'rescheduleOrder'
-      )?.result;
-
-      if (toolResult?.status === 'rescheduled') {
-        return (
-          <div className="my-4 w-full">
-            <p>Your order has been successfully rescheduled!</p>
-            <p>New Date/Time: {toolResult.newSchedule.dateTime}</p>
-          </div>
-        );
-      }
-    }
-
     // Check for order status updates
     if (message.role === 'assistant' && message.toolInvocations?.some(
       (t: { toolName: string; state: string; }) => t.toolName === 'trackOrderStatus' && t.state === 'result'
@@ -624,7 +618,7 @@ export function ChatForm({
 
             {isLoading && isLastMessage && (
               <div className="my-4 w-full flex items-center justify-start">
-                <div className="mt-2 h-4 w-4 animate-bounce rounded-full bg-gray-300"></div>
+                <div className="mt-2 h-4 w-4 animate-bounce rounded-full bg-gray-300"> </div>
               </div>)}
           </div>
         );

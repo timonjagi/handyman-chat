@@ -439,8 +439,12 @@ export const rescheduleOrder = tool({
   }),
   execute: async ({ orderId, newDateTime, reason }) => {
     // Mock implementation - in a real system, this would check availability and update scheduling
+    console.log('Rescheduling order:', { orderId, newDateTime, reason });
+
     return {
       status: 'rescheduled',
+      orderId,
+      message: `Order ${orderId} has been rescheduled to ${newDateTime}.`,
       newSchedule: {
         dateTime: newDateTime,
         confirmed: true
